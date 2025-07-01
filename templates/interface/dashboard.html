@@ -1,4 +1,33 @@
 {% extends "interface/base.html" %} {% block content %}
-<h1>Dashboard</h1>
-<p>Bienvenue sur le tableau de bord.</p>
+<h1>Tableau de Bord</h1>
+
+<div class="row mb-4">
+    <div class="col-md-3"><strong>Total images :</strong> {{ total_images }}</div>
+    <div class="col-md-3"><strong>Pleines :</strong> {{ images_pleines }}</div>
+    <div class="col-md-3"><strong>Vides :</strong> {{ images_vides }}</div>
+    <div class="col-md-3"><strong>Non annotées :</strong> {{ images_non_annotees }}</div>
+</div>
+
+<h2>Évolution (7 derniers jours)</h2>
+<ul>
+    {% for data in evolution_data %}
+    <li>{{ data.date }} : {{ data.count }} images</li>
+    {% endfor %}
+</ul>
+
+<h2>Liste des images</h2>
+<ul>
+    {% for image in images %}
+    <li>
+        <a href="{% url 'annoter_image' image.id %}">Image {{ image.id }}</a> - {{ image.annotation }}
+    </li>
+    {% endfor %}
+</ul>
+
+<div>
+    {% if images.has_previous %}
+    <a href="?page={{ images.previous_page_number }}">Précédent</a> {% endif %}
+    <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span> {% if images.has_next %}
+    <a href="?page={{ images.next_page_number }}">Suivant</a> {% endif %}
+</div>
 {% endblock %}

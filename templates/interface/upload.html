@@ -1,0 +1,17 @@
+{% extends "interface/base.html" %} {% block content %}
+<h1>Uploader une image</h1>
+
+<form method="post" enctype="multipart/form-data" class="mb-4">
+    {% csrf_token %} {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Envoyer</button>
+</form>
+
+<h2>Dernières images</h2>
+<ul>
+    {% for img in dernieres_images %}
+    <li>
+        <a href="{% url 'annoter_image' img.id %}">Image {{ img.id }}</a> - {{ img.localisation }}
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
