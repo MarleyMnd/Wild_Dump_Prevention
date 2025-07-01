@@ -1,0 +1,39 @@
+{% extends "interface/base.html" %} {% block content %}
+<h1>Liste des images</h1>
+
+<form method="get" class="row mb-4">
+    <div class="col">
+        <select name="annotation" class="form-select">
+            <option value="toutes">Toutes les annotations</option>
+            <option value="pleine" {% if filtre_annotation == 'pleine' %}selected{% endif %}>Pleine</option>
+            <option value="vide" {% if filtre_annotation == 'vide' %}selected{% endif %}>Vide</option>
+            <option value="non_annotee" {% if filtre_annotation == 'non_annotee' %}selected{% endif %}>Non annotée</option>
+        </select>
+    </div>
+    <div class="col">
+        <select name="auto" class="form-select">
+            <option value="toutes">Toutes les auto-annotations</option>
+            <option value="pleine" {% if filtre_auto == 'pleine' %}selected{% endif %}>Auto Pleine</option>
+            <option value="vide" {% if filtre_auto == 'vide' %}selected{% endif %}>Auto Vide</option>
+        </select>
+    </div>
+    <div class="col">
+        <button type="submit" class="btn btn-primary">Filtrer</button>
+    </div>
+</form>
+
+<ul>
+    {% for image in images %}
+    <li>
+        <a href="{% url 'annoter_image' image.id %}">Image {{ image.id }}</a> - {{ image.annotation }}
+    </li>
+    {% endfor %}
+</ul>
+
+<div>
+    {% if images.has_previous %}
+    <a href="?page={{ images.previous_page_number }}">Précédent</a> {% endif %}
+    <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span> {% if images.has_next %}
+    <a href="?page={{ images.next_page_number }}">Suivant</a> {% endif %}
+</div>
+{% endblock %}
