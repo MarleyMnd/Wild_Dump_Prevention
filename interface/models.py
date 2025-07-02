@@ -4,6 +4,9 @@ from django.db import transaction
 import os
 from PIL import Image
 import json
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 class ImageAnnotation(models.Model):
     ETAT_CHOICES = [
@@ -103,6 +106,15 @@ class ImageAnnotation(models.Model):
                     # Calculer le contraste (différence max-min)
                     luminances = [0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in pixels]
                     self.contraste = round(max(luminances) - min(luminances), 2)
+
+                    # Générer et sauvegarder l’histogramme RGB
+                    self._generer_histogramme_couleur()
+                    
+                    # Générer et sauvegarder l’histogramme de luminance
+                    self._generer_histogramme_luminance()
+
+                    # Générer et sauvegarder les contours
+                    self._generer_contours()
                     
         except Exception as e:
             print(f"Erreur lors de l'extraction des caractéristiques : {e}")
@@ -131,3 +143,98 @@ class ImageAnnotation(models.Model):
         if all([self.couleur_moyenne_r, self.couleur_moyenne_g, self.couleur_moyenne_b]):
             return f"#{self.couleur_moyenne_r:02x}{self.couleur_moyenne_g:02x}{self.couleur_moyenne_b:02x}"
         return "#000000"
+
+    def _generer_histogramme_couleur(self, save_histograms=True):
+        """
+        Génère un histogramme RGB de l'image et le sauvegarde dans le dossier histogrammes_rgb.
+        """
+        try:
+            with Image.open(self.image.path).convert("RGB") as image:
+                np_image = np.array(image)
+
+                r = np_image[:, :, 0].flatten()
+                g = np_image[:, :, 1].flatten()
+                b = np_image[:, :, 2].flatten()
+
+                plt.figure(figsize=(8, 4))
+                plt.hist(r, bins=256, color='red', alpha=0.5, label='Rouge')
+                plt.hist(g, bins=256, color='green', alpha=0.5, label='Vert')
+                plt.hist(b, bins=256, color='blue', alpha=0.5, label='Bleu')
+                plt.title(f"Histogramme RVB - Image {self.id}")
+                plt.xlabel("Valeur de pixel")
+                plt.ylabel("Nombre de pixels")
+                plt.legend()
+                plt.tight_layout()
+
+                if save_histograms:
+                    histo_dir = os.path.join(os.path.dirname(self.image.path), "histogrammes_rgb")
+                    os.makedirs(histo_dir, exist_ok=True)
+                    histo_path = os.path.join(histo_dir, f"{os.path.splitext(os.path.basename(self.image.name))[0]}_hist.png")
+                    plt.savefig(histo_path)
+                    print(f"Histogramme RGB sauvegardé : {histo_path}")
+                else:
+                    plt.show()
+                plt.close()
+        except Exception as e:
+            print(f"Erreur lors de la génération de l'histogramme : {e}")
+
+    def _generer_histogramme_luminance(self, save_histograms=True):
+        """
+        Génère un histogramme de luminance (niveaux de gris) et le sauvegarde dans le dossier histogrammes_luminances.
+        """
+        try:
+            with Image.open(self.image.path).convert("L") as image:
+                np_image = np.array(image)
+
+                plt.figure(figsize=(8, 4))
+                plt.hist(np_image.flatten(), bins=256, range=(0, 255), color='gray', alpha=0.8)
+                plt.title(f'Histogramme de luminance - Image {self.id}')
+                plt.xlabel('Luminance (0 = noir, 255 = blanc)')
+                plt.ylabel('Nombre de pixels')
+                plt.grid(True)
+                plt.tight_layout()
+
+                if save_histograms:
+                    histo_dir = os.path.join(os.path.dirname(self.image.path), "histogrammes_luminances")
+                    os.makedirs(histo_dir, exist_ok=True)
+                    histo_path = os.path.join(histo_dir, f"{os.path.splitext(os.path.basename(self.image.name))[0]}_luminance_hist.png")
+                    plt.savefig(histo_path)
+                    print(f"Histogramme de luminance sauvegardé : {histo_path}")
+                else:
+                    plt.show()
+                plt.close()
+        except Exception as e:
+            print(f"Erreur lors de la génération de l'histogramme de luminance : {e}")
+
+        import cv2  # Assure-toi d'importer OpenCV en haut du fichier
+
+    def _generer_contours(self, save_contours=True):
+        """
+        Détecte les contours de l'image à l'aide de l'algorithme de Canny et les sauvegarde.
+        """
+        try:
+            image_path = self.image.path
+            image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+            if image is None:
+                print(f"Impossible de lire l'image : {self.image.name}")
+                return
+
+            edges = cv2.Canny(image, threshold1=100, threshold2=200)
+
+            plt.figure(figsize=(8, 6))
+            plt.imshow(edges, cmap='gray')
+            plt.title(f"Contours (Canny) - Image {self.id}")
+            plt.axis('off')
+
+            if save_contours:
+                contours_dir = os.path.join(os.path.dirname(image_path), "contours")
+                os.makedirs(contours_dir, exist_ok=True)
+                save_path = os.path.join(contours_dir, f"{os.path.splitext(os.path.basename(self.image.name))[0]}_contours.png")
+                cv2.imwrite(save_path, edges)
+                print(f"Contours sauvegardés : {save_path}")
+            else:
+                plt.show()
+
+            plt.close()
+        except Exception as e:
+            print(f"Erreur lors de la détection des contours : {e}")
