@@ -60,23 +60,18 @@ class ImageAnnotation(models.Model):
     
     @transaction.atomic
     def save(self, *args, **kwargs):
-        # Sauvegarder d'abord pour avoir l'image accessible
+        super().save(*args, **kwargs)  # Sauvegarde initiale (pour accéder à self.image)
+
+        # Toujours re-calculer les caractéristiques pour permettre une mise à jour
+        if self.image:
+            self.extraire_caracteristiques()
+
+        # Toujours re-classer automatiquement
+        self.classifier_automatiquement()
+
+        # Sauvegarde finale avec les nouvelles valeurs
         super().save(*args, **kwargs)
 
-        # Si latitude/longitude sont vides mais qu’une localisation est renseignée, on tente de géocoder
-        if self.localisation and (self.latitude is None or self.longitude is None):
-            coords = geocoder_adresse(self.localisation)
-            if coords:
-                self.latitude, self.longitude = coords
-                print(f"[DEBUG] Géolocalisation mise à jour pour l'image {self.id} : {coords}")
-        
-        # Extraire les caractéristiques si pas encore fait
-        if self.image and not self.taille_fichier:
-            self.extraire_caracteristiques()
-            super().save(*args, **kwargs)  # Met à jour les métadonnées
-
-        self.classifier_automatiquement()
-        super().save(*args, **kwargs)  # Enregistre l'annotation automatique
 
     
     def extraire_caracteristiques(self):
@@ -133,28 +128,34 @@ class ImageAnnotation(models.Model):
             print(f"Erreur lors de l'extraction des caractéristiques : {e}")
     
     def classifier_automatiquement(self):
-        if not all([self.luminance_moyenne, self.taille_fichier, self.contraste]):
+        if self.luminance_moyenne is None or self.taille_fichier is None or self.contraste is None:
+            print("[DEBUG] Données incomplètes : classification annulée.")
             return
 
         if self.luminance_moyenne < 90 and self.taille_fichier > 400:
             self.annotation_automatique = 'pleine'
+            print("Règle déclenchée : Sombre et fichier lourd → Pleine")
+
         elif self.luminance_moyenne > 140 and self.taille_fichier < 300:
             self.annotation_automatique = 'vide'
+            print("Règle déclenchée : Clair et léger → Vide")
+
         elif self.contraste > 200 and self.luminance_moyenne < 130:
             self.annotation_automatique = 'pleine'
+            print("Règle déclenchée : Contraste élevé et sombre → Pleine")
+
         elif self.luminance_moyenne > 170 and self.contraste < 80:
             self.annotation_automatique = 'vide'
+            print("Règle déclenchée : Très clair et peu contrasté → Vide")
+
         else:
             self.annotation_automatique = 'non_annotee'
+            print("Règle déclenchée : Aucune règle claire → Non annotée")
 
         print(f"[DEBUG] Luminance : {self.luminance_moyenne}")
         print(f"[DEBUG] Taille fichier (Ko) : {self.taille_fichier}")
         print(f"[DEBUG] Contraste : {self.contraste}")
         print(f"[DEBUG] Annotation auto choisie : {self.annotation_automatique}")
-
-
-
-
 
 
     
