@@ -4,8 +4,12 @@ from django.db import transaction
 import os
 from PIL import Image
 import json
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+import cv2
+from .utils import geocoder_adresse
 
 
 class ImageAnnotation(models.Model):
@@ -56,15 +60,24 @@ class ImageAnnotation(models.Model):
     
     @transaction.atomic
     def save(self, *args, **kwargs):
-        # Sauvegarder d'abord pour avoir le fichier
+        # Sauvegarder d'abord pour avoir l'image accessible
         super().save(*args, **kwargs)
+
+        # Si latitude/longitude sont vides mais qu’une localisation est renseignée, on tente de géocoder
+        if self.localisation and (self.latitude is None or self.longitude is None):
+            coords = geocoder_adresse(self.localisation)
+            if coords:
+                self.latitude, self.longitude = coords
+                print(f"[DEBUG] Géolocalisation mise à jour pour l'image {self.id} : {coords}")
         
-        # Extraire les caractéristiques si pas déjà fait
+        # Extraire les caractéristiques si pas encore fait
         if self.image and not self.taille_fichier:
             self.extraire_caracteristiques()
-            self.classifier_automatiquement()
-            # Sauvegarder à nouveau avec les métadonnées
-            super().save(*args, **kwargs)
+            super().save(*args, **kwargs)  # Met à jour les métadonnées
+
+        self.classifier_automatiquement()
+        super().save(*args, **kwargs)  # Enregistre l'annotation automatique
+
     
     def extraire_caracteristiques(self):
         """Extrait automatiquement les caractéristiques de l'image"""
@@ -120,22 +133,30 @@ class ImageAnnotation(models.Model):
             print(f"Erreur lors de l'extraction des caractéristiques : {e}")
     
     def classifier_automatiquement(self):
-        """Applique les règles de classification automatique"""
         if not all([self.luminance_moyenne, self.taille_fichier, self.contraste]):
             return
-        
-        # Règles de classification basées sur les caractéristiques
-        # Règle 1: Image sombre + gros fichier = poubelle pleine
-        if self.luminance_moyenne < 100 and self.taille_fichier > 500:
+
+        if self.luminance_moyenne < 90 and self.taille_fichier > 400:
             self.annotation_automatique = 'pleine'
-        # Règle 2: Image claire + petit fichier = poubelle vide
-        elif self.luminance_moyenne > 150 and self.taille_fichier < 300:
+        elif self.luminance_moyenne > 140 and self.taille_fichier < 300:
             self.annotation_automatique = 'vide'
-        # Règle 3: Contraste élevé peut indiquer des déchets visibles
-        elif self.contraste > 100:
+        elif self.contraste > 200 and self.luminance_moyenne < 130:
             self.annotation_automatique = 'pleine'
+        elif self.luminance_moyenne > 170 and self.contraste < 80:
+            self.annotation_automatique = 'vide'
         else:
             self.annotation_automatique = 'non_annotee'
+
+        print(f"[DEBUG] Luminance : {self.luminance_moyenne}")
+        print(f"[DEBUG] Taille fichier (Ko) : {self.taille_fichier}")
+        print(f"[DEBUG] Contraste : {self.contraste}")
+        print(f"[DEBUG] Annotation auto choisie : {self.annotation_automatique}")
+
+
+
+
+
+
     
     @property
     def couleur_moyenne_hex(self):
@@ -205,8 +226,6 @@ class ImageAnnotation(models.Model):
                 plt.close()
         except Exception as e:
             print(f"Erreur lors de la génération de l'histogramme de luminance : {e}")
-
-        import cv2  # Assure-toi d'importer OpenCV en haut du fichier
 
     def _generer_contours(self, save_contours=True):
         """
