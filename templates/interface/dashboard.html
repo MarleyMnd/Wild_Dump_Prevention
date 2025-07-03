@@ -1,4 +1,14 @@
 {% extends "interface/base.html" %} {% block content %}
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
+
 <style>
     .container {
         max-width: 1200px;
@@ -272,11 +282,8 @@
 
 <div class="map-section">
     <h2>Cartographie des Zones à Risque</h2>
-    <div class="map-placeholder">
-        Carte interactive des emplacements
-        <br>
-        <small>({{ total_images }} images géolocalisées)</small>
-    </div>
+    <pre>{{ coords_json }}</pre>
+    <div id="mapid" style="height: 400px; border-radius:8px;"></div>
     <div class="file-size-stats" style="margin-top: 15px;">
         <div class="size-stat">
             <strong style="color: #ff6b6b;">{{ zones_critiques|default:"0" }}</strong>
@@ -339,23 +346,83 @@
 </div>
 
 <script>
-    // Actualisation automatique toutes les 5 minutes
-    setTimeout(function() {
-        location.reload();
-    }, 300000);
+  document.addEventListener('DOMContentLoaded', function () {
+    // Données géographiques transmises par Django
+    const coords = JSON.parse('{{ coords_json|escapejs }}');
 
-    // Animation des barres de progression au chargement
-    document.addEventListener('DOMContentLoaded', function() {
-        const progressBars = document.querySelectorAll('.progress-fill-pleines, .progress-fill-vides');
-        progressBars.forEach(bar => {
-            const width = bar.style.width;
-            bar.style.width = '0%';
-            setTimeout(() => {
-                bar.style.transition = 'width 1s ease-in-out';
-                bar.style.width = width;
-            }, 100);
-        });
+    // Initialisation de la carte
+    const defaultLatLng = coords.length
+      ? [coords[0].lat, coords[0].lng]
+      : [48.8566, 2.3522]; // Paris par défaut
+
+    const map = L.map('mapid').setView(defaultLatLng, 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Icônes verte et rouge
+    const greenIcon = new L.Icon({
+      iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/green.png',
+      shadowUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/msmarker.shadow.png',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32],
+      shadowSize: [59, 32],
+      shadowAnchor: [16, 32]
     });
+
+    const redIcon = new L.Icon({
+      iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red.png',
+      shadowUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/msmarker.shadow.png',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32],
+      shadowSize: [59, 32],
+      shadowAnchor: [16, 32]
+    });
+
+    // Ajout des marqueurs avec icône selon l'annotation
+    coords.forEach(point => {
+      let icon = greenIcon; // par défaut
+
+      if (point.annotation === "pleine") {
+        icon = redIcon;
+      } else if (point.annotation === "vide") {
+        icon = greenIcon;
+      }
+
+      const marker = L.marker([point.lat, point.lng], { icon: icon }).addTo(map);
+
+      const popupContent = `
+        <strong>ID :</strong> ${point.id}<br>
+        <strong>Annotation :</strong> ${point.annotation}<br>
+        <strong>Date :</strong> ${point.date}
+      `;
+      marker.bindPopup(popupContent);
+    });
+
+    // Animation des barres de progression
+    const progressBars = document.querySelectorAll('.progress-fill-pleines, .progress-fill-vides');
+    progressBars.forEach(bar => {
+      const width = bar.style.width;
+      bar.style.width = '0%';
+      setTimeout(() => {
+        bar.style.transition = 'width 1s ease-in-out';
+        bar.style.width = width;
+      }, 100);
+    });
+
+    // Auto-refresh toutes les 5 minutes
+    setTimeout(function () {
+      location.reload();
+    }, 300000);
+  });
 </script>
+
+
+
 
 {% endblock %}
