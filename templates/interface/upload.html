@@ -1,17 +1,77 @@
-{% extends "interface/base.html" %} {% block content %}
-<h1>Uploader une image</h1>
+{% extends "interface/base.html" %}
 
-<form method="post" enctype="multipart/form-data" class="mb-4">
-    {% csrf_token %} {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Envoyer</button>
+{% block content %}
+<h2 class="mb-4">Uploader une image de poubelle</h2>
+
+<form method="post" enctype="multipart/form-data" class="position-relative">
+  {% csrf_token %}
+
+  <!-- Image -->
+  <div class="mb-3">
+      {{ form.image.label_tag }}  {{ form.image }}
+  </div>
+
+  <!-- Adresse + suggestions -->
+  <div class="mb-3 position-relative">
+      {{ form.localisation.label_tag }}  {{ form.localisation }}
+      <ul id="suggestions"
+          class="list-group position-absolute w-100"
+          style="z-index:1000;"></ul>
+  </div>
+
+  <!-- Champs cachés lat / lon -->
+  {{ form.latitude }}  {{ form.longitude }}
+
+  <button type="submit" class="btn btn-primary">Envoyer</button>
 </form>
 
-<h2>Dernières images</h2>
+<hr>
+<h3>Dernières images</h3>
 <ul>
-    {% for img in dernieres_images %}
-    <li>
-        <a href="{% url 'annoter_image' img.id %}">Image {{ img.id }}</a> - {{ img.localisation }}
-    </li>
-    {% endfor %}
+  {% for img in dernieres_images %}
+    <li><a href="{% url 'annoter_image' img.id %}">Image {{ img.id }}</a> – {{ img.localisation }}</li>
+  {% empty %}
+    <li>Aucune image pour l’instant.</li>
+  {% endfor %}
 </ul>
+
+<!-- ========= JS d’autocomplétion Adresse.data.gouv.fr ========= -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const input       = document.getElementById("adresse");
+  const suggestions = document.getElementById("suggestions");
+  const latInput    = document.getElementById("id_latitude");
+  const lonInput    = document.getElementById("id_longitude");
+
+  input.addEventListener("input", () => {
+      const q = input.value.trim();
+      if (q.length < 3) { suggestions.innerHTML = ""; return; }
+
+      fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5`)
+        .then(r => r.json())
+        .then(data => {
+            suggestions.innerHTML = "";
+            data.features.forEach(feat => {
+                const li = document.createElement("li");
+                li.textContent = feat.properties.label;
+                li.className   = "list-group-item list-group-item-action";
+                li.onclick = () => {
+                    input.value    = feat.properties.label;
+                    latInput.value = feat.geometry.coordinates[1];
+                    lonInput.value = feat.geometry.coordinates[0];
+                    suggestions.innerHTML = "";
+                };
+                suggestions.appendChild(li);
+            });
+        });
+  });
+
+  // Fermer la liste quand on clique ailleurs
+  document.addEventListener("click", e => {
+      if (!suggestions.contains(e.target) && e.target !== input) {
+          suggestions.innerHTML = "";
+      }
+  });
+});
+</script>
 {% endblock %}
