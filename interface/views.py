@@ -70,7 +70,8 @@ def annoter_image(request, image_id):
     return render(request, 'interface/annoter.html', context)
 
 def dashboard(request):
-    """Vue du tableau de bord avec statistiques"""
+    """Vue du tableau de bord avec statistiques et cartographie interactive"""
+    # Statistiques globales
     total_images = ImageAnnotation.objects.count()
     images_pleines = ImageAnnotation.objects.filter(annotation='pleine').count()
     images_vides = ImageAnnotation.objects.filter(annotation='vide').count()
@@ -81,27 +82,15 @@ def dashboard(request):
         pourcentage_non_annotees = round((images_non_annotees / total_images) * 100, 1)
     else:
         pourcentage_pleines = pourcentage_vides = pourcentage_non_annotees = 0
-    
+
     # Statistiques de classification automatique
     auto_pleines = ImageAnnotation.objects.filter(annotation_automatique='pleine').count()
     auto_vides = ImageAnnotation.objects.filter(annotation_automatique='vide').count()
-    
+
     # Images récentes (7 derniers jours)
     date_limite = datetime.now() - timedelta(days=7)
     images_recentes = ImageAnnotation.objects.filter(date_ajout__gte=date_limite).count()
-    
-    stats_annotation = {
-        'pleines': images_pleines,
-        'vides': images_vides,
-        'non_annotees': images_non_annotees,
-    }
-    
-    stats_auto = {
-        'pleines': auto_pleines,
-        'vides': auto_vides,
-        'non_annotees': total_images - auto_pleines - auto_vides,
-    }
-    
+
     # Evolution par jour (7 derniers jours)
     evolution_data = []
     for i in range(7):
@@ -114,7 +103,8 @@ def dashboard(request):
             'count': count
         })
     evolution_data.reverse()
-    
+
+    # Pagination des images
     images_list = ImageAnnotation.objects.all()
     paginator = Paginator(images_list, 10)
     page_number = request.GET.get('page')
@@ -127,11 +117,26 @@ def dashboard(request):
         taille_max=Max('taille_fichier'),
         taille_min=Min('taille_fichier'),
     )
-
     taille_moyenne = round(tailles['taille_moyenne'] or 0, 2)
     taille_totale = round(tailles['taille_totale'] or 0, 2)
     taille_max = round(tailles['taille_max'] or 0, 2)
     taille_min = round(tailles['taille_min'] or 0, 2)
+
+    # Données de géolocalisation pour Leaflet
+    coordonnees = ImageAnnotation.objects.filter(
+        latitude__isnull=False, longitude__isnull=False
+    ).values('id', 'latitude', 'longitude', 'annotation', 'date_ajout')
+    coords_list = [
+        {
+            'id': item['id'],
+            'lat': item['latitude'],
+            'lng': item['longitude'],
+            'annotation': item['annotation'],
+            'date': item['date_ajout'].strftime('%d/%m/%Y %H:%M'),
+        }
+        for item in coordonnees
+    ]
+    coords_json = json.dumps(coords_list)
 
     context = {
         'total_images': total_images,
@@ -139,8 +144,16 @@ def dashboard(request):
         'images_vides': images_vides,
         'images_non_annotees': images_non_annotees,
         'images_recentes': images_recentes,
-        'stats_annotation': json.dumps(stats_annotation),
-        'stats_auto': json.dumps(stats_auto),
+        'stats_annotation': json.dumps({
+            'pleines': images_pleines,
+            'vides': images_vides,
+            'non_annotees': images_non_annotees,
+        }),
+        'stats_auto': json.dumps({
+            'pleines': auto_pleines,
+            'vides': auto_vides,
+            'non_annotees': total_images - auto_pleines - auto_vides,
+        }),
         'evolution_data': json.dumps(evolution_data),
         'images': images,
         'pourcentage_pleines': pourcentage_pleines,
@@ -150,8 +163,10 @@ def dashboard(request):
         'taille_totale': taille_totale,
         'taille_max': taille_max,
         'taille_min': taille_min,
+        'coords_json': coords_json,
     }
     return render(request, 'interface/dashboard.html', context)
+
 
 def liste_images(request):
     """Vue pour lister toutes les images avec filtres"""
