@@ -4,16 +4,20 @@ from .models import ImageAnnotation
 class ImageUploadForm(forms.ModelForm):
     class Meta:
         model = ImageAnnotation
-        fields = ['image', 'localisation']
+        fields = ['image', 'localisation', 'latitude', 'longitude']
         widgets = {
             'image': forms.FileInput(attrs={
                 'class': 'form-control',
                 'accept': 'image/jpeg,image/jpg,image/png',
             }),
             'localisation': forms.TextInput(attrs={
+                'id': 'adresse',
                 'class': 'form-control',
                 'placeholder': 'Ex: Rue de la République, Paris',
+                'autocomplete': 'off',
             }),
+            'latitude':  forms.HiddenInput(attrs={'id': 'id_latitude'}),
+            'longitude': forms.HiddenInput(attrs={'id': 'id_longitude'}),
         }
     
     def clean_image(self):

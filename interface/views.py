@@ -19,26 +19,31 @@ def upload_image(request):
     if request.method == 'POST':
         form = ImageUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            image_annotation = form.save()
-
-            # Géocodage automatique si une adresse est fournie
+            image_annotation = form.save(commit=False)
+            lat     = form.cleaned_data.get('latitude')
+            lon     = form.cleaned_data.get('longitude')
             adresse = form.cleaned_data.get('localisation')
-            if adresse:
-                lat, lon = geocoder_adresse(adresse)
-                image_annotation.latitude = lat
-                image_annotation.longitude = lon
-                image_annotation.save()
-
-            messages.success(request, f'Image uploadée avec succès ! ID: {image_annotation.id}')
+            if (lat is None or lon is None) and adresse:
+                try:
+                    lat, lon = geocoder_adresse(adresse)
+                except Exception:
+                    lat = lon = None
+                    messages.warning(
+                        request,
+                        "Adresse enregistrée mais géocodage impossible – coordonnées absentes."
+                    )
+            image_annotation.latitude  = lat
+            image_annotation.longitude = lon
+            image_annotation.save()
+            messages.success(
+                request,
+                f"Image uploadée avec succès ! ID : {image_annotation.id}"
+            )
             return redirect('annoter_image', image_id=image_annotation.id)
-        else:
-            messages.error(request, 'Erreur lors de l\'upload. Vérifiez le formulaire.')
+        messages.error(request, "Erreur lors de l’upload – vérifiez le formulaire.")
     else:
         form = ImageUploadForm()
-
-    # Récupérer les dernières images pour affichage
-    dernieres_images = ImageAnnotation.objects.all()[:5]
-
+    dernieres_images = ImageAnnotation.objects.order_by('-date_ajout')[:5]
     context = {
         'form': form,
         'dernieres_images': dernieres_images,
