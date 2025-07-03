@@ -1,0 +1,113 @@
+body {
+    background-color: #F296BD;
+    font-family: 'Segoe UI', sans-serif;
+    color: #267F53;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #267F53;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    border-bottom: 5px solid #FCCA59;
+}
+
+nav {
+    background-color: #FCCA59;
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+
+nav a {
+    color: #267F53;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+nav a:hover {
+    color: #F5793B;
+}
+
+.container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background-color: white;
+    border: 4px solid #99B7F5;
+    border-radius: 10px;
+}
+
+h1,
+h2,
+h3 {
+    color: #267F53;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+input[type="text"],
+input[type="file"],
+select,
+textarea {
+    padding: 0.6rem;
+    border: 2px solid #99B7F5;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+button,
+input[type="submit"] {
+    background-color: #267F53;
+    color: white;
+    padding: 0.7rem 1.2rem;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover,
+input[type="submit"]:hover {
+    background-color: #F5793B;
+}
+
+
+/* Messages */
+
+ul.messages {
+    list-style: none;
+    margin: 1rem 0;
+    padding: 0;
+}
+
+ul.messages li {
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+}
+
+ul.messages li.success {
+    background-color: #FCCA59;
+    color: #267F53;
+}
+
+ul.messages li.error {
+    background-color: #F5793B;
+    color: white;
+}
+
+.image-card {
+    border: 2px solid #F296BD;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background-color: #fff7f9;
+}

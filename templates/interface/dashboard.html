@@ -1,33 +1,361 @@
 {% extends "interface/base.html" %} {% block content %}
-<h1>Tableau de Bord</h1>
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .dashboard-title {
+        color: #333;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 30px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: #f9f9f9;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 2em;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 0.9em;
+    }
+    
+    .progress-section {
+        background: #f9f9f9;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        margin-bottom: 30px;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 25px;
+        background: #eee;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+        margin: 10px 0;
+    }
+    
+    .progress-fill-pleines {
+        height: 100%;
+        background: #ff6b6b;
+        float: left;
+    }
+    
+    .progress-fill-vides {
+        height: 100%;
+        background: #4ecdc4;
+        float: left;
+    }
+    
+    .progress-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+    
+    .chart-section {
+        background: #f9f9f9;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        margin-bottom: 30px;
+    }
+    
+    .chart-container {
+        height: 300px;
+        position: relative;
+    }
+    
+    .evolution-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .evolution-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .map-section {
+        background: #f9f9f9;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        margin-bottom: 30px;
+    }
+    
+    .map-placeholder {
+        height: 400px;
+        background: #e0e0e0;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        font-size: 1.1em;
+    }
+    
+    .file-size-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .size-stat {
+        text-align: center;
+        padding: 10px;
+        background: white;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+    
+    .images-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .images-table th,
+    .images-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .images-table th {
+        background: #f5f5f5;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .annotation-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .badge-pleine {
+        background: #ff6b6b;
+    }
+    
+    .badge-vide {
+        background: #4ecdc4;
+    }
+    
+    .badge-non-annotee {
+        background: #ffa726;
+    }
+    
+    .pagination {
+        text-align: center;
+        margin-top: 20px;
+    }
+    
+    .pagination a {
+        color: #333;
+        text-decoration: none;
+        padding: 8px 12px;
+        margin: 0 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .pagination a:hover {
+        background: #eee;
+    }
+    
+    .two-column {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    @media (max-width: 768px) {
+        .two-column {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
 
-<div class="row mb-4">
-    <div class="col-md-3"><strong>Total images :</strong> {{ total_images }}</div>
-    <div class="col-md-3"><strong>Pleines :</strong> {{ images_pleines }}</div>
-    <div class="col-md-3"><strong>Vides :</strong> {{ images_vides }}</div>
-    <div class="col-md-3"><strong>Non annotées :</strong> {{ images_non_annotees }}</div>
+<h1 class="dashboard-title">Tableau de Bord - Surveillance des Débordements</h1>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ total_images }}</div>
+        <div class="stat-label">Total Images</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ images_pleines }}</div>
+        <div class="stat-label">Images Pleines</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ images_vides }}</div>
+        <div class="stat-label">Images Vides</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ images_non_annotees }}</div>
+        <div class="stat-label">Non Annotées</div>
+    </div>
 </div>
 
-<h2>Évolution (7 derniers jours)</h2>
-<ul>
-    {% for data in evolution_data %}
-    <li>{{ data.date }} : {{ data.count }} images</li>
-    {% endfor %}
-</ul>
-
-<h2>Liste des images</h2>
-<ul>
-    {% for image in images %}
-    <li>
-        <a href="{% url 'annoter_image' image.id %}">Image {{ image.id }}</a> - {{ image.annotation }}
-    </li>
-    {% endfor %}
-</ul>
-
-<div>
-    {% if images.has_previous %}
-    <a href="?page={{ images.previous_page_number }}">Précédent</a> {% endif %}
-    <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span> {% if images.has_next %}
-    <a href="?page={{ images.next_page_number }}">Suivant</a> {% endif %}
+<div class="progress-section">
+    <h2>Répartition des Annotations</h2>
+    <div class="progress-bar">
+        <div class="progress-fill-pleines" style="width: {{ pourcentage_pleines }}%;"></div>
+        <div class="progress-fill-vides" style="width: {{ pourcentage_vides }}%;"></div>
+    </div>
+    <div class="progress-labels">
+        <span>{{ pourcentage_pleines }}% Pleines</span>
+        <span>{{ pourcentage_vides }}% Vides</span>
+        <span>{{ pourcentage_non_annotees }}% Non annotées</span>
+    </div>
 </div>
+
+
+<div class="two-column">
+    <div class="chart-section">
+        <h2>Distribution des Tailles</h2>
+        <div class="file-size-stats">
+            <div class="size-stat">
+                <strong>{{ taille_moyenne|default:"N/A" }}</strong>
+                <div>Moyenne (MB)</div>
+            </div>
+            <div class="size-stat">
+                <strong>{{ taille_totale|default:"N/A" }}</strong>
+                <div>Total (MB)</div>
+            </div>
+            <div class="size-stat">
+                <strong>{{ taille_max|default:"N/A" }}</strong>
+                <div>Plus grande (MB)</div>
+            </div>
+            <div class="size-stat">
+                <strong>{{ taille_min|default:"N/A" }}</strong>
+                <div>Plus petite (MB)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="map-section">
+    <h2>Cartographie des Zones à Risque</h2>
+    <div class="map-placeholder">
+        Carte interactive des emplacements
+        <br>
+        <small>({{ total_images }} images géolocalisées)</small>
+    </div>
+    <div class="file-size-stats" style="margin-top: 15px;">
+        <div class="size-stat">
+            <strong style="color: #ff6b6b;">{{ zones_critiques|default:"0" }}</strong>
+            <div>Zones Critiques</div>
+        </div>
+        <div class="size-stat">
+            <strong style="color: #ffa726;">{{ zones_surveillees|default:"0" }}</strong>
+            <div>Zones Surveillées</div>
+        </div>
+        <div class="size-stat">
+            <strong style="color: #4ecdc4;">{{ zones_sures|default:"0" }}</strong>
+            <div>Zones Sûres</div>
+        </div>
+    </div>
+</div>
+
+<div class="chart-section">
+    <h2>Images Récentes</h2>
+    <table class="images-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Annotation</th>
+                <th>Taille</th>
+                <th>Localisation</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for image in images %}
+            <tr>
+                <td>{{ image.id }}</td>
+                <td>{{ image.date_ajout|date:"d/m/Y H:i"|default:"N/A" }}</td>
+                <td>
+                    {% if image.annotation == 'pleine' %}
+                    <span class="annotation-badge badge-pleine">Pleine</span> {% elif image.annotation == 'vide' %}
+                    <span class="annotation-badge badge-vide">Vide</span> {% else %}
+                    <span class="annotation-badge badge-non-annotee">Non annotée</span> {% endif %}
+                </td>
+                <td>{{ image.taille_fichier|floatformat:2|default:"N/A" }} MB</td>
+                <td>
+                    {% if image.latitude and image.longitude %} {{ image.latitude|floatformat:4 }}, {{ image.longitude|floatformat:4 }} {% else %} Non géolocalisée {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'annoter_image' image.id %}">Annoter</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        {% if images.has_previous %}
+        <a href="?page={{ images.previous_page_number }}">← Précédent</a> {% endif %}
+
+        <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span> {% if images.has_next %}
+        <a href="?page={{ images.next_page_number }}">Suivant →</a> {% endif %}
+    </div>
+</div>
+
+<script>
+    // Actualisation automatique toutes les 5 minutes
+    setTimeout(function() {
+        location.reload();
+    }, 300000);
+
+    // Animation des barres de progression au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBars = document.querySelectorAll('.progress-fill-pleines, .progress-fill-vides');
+        progressBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.transition = 'width 1s ease-in-out';
+                bar.style.width = width;
+            }, 100);
+        });
+    });
+</script>
+
 {% endblock %}

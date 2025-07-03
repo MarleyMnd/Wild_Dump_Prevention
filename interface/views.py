@@ -8,6 +8,11 @@ from .models import ImageAnnotation
 from .forms import ImageUploadForm, AnnotationForm
 import json
 from datetime import datetime, timedelta
+from django.db.models import Avg, Sum, Max, Min
+from geopy.geocoders import Nominatim
+from .utils import geocoder_adresse
+
+
 
 def upload_image(request):
     """Vue pour l'upload d'images"""
@@ -15,16 +20,25 @@ def upload_image(request):
         form = ImageUploadForm(request.POST, request.FILES)
         if form.is_valid():
             image_annotation = form.save()
+
+            # Géocodage automatique si une adresse est fournie
+            adresse = form.cleaned_data.get('localisation')
+            if adresse:
+                lat, lon = geocoder_adresse(adresse)
+                image_annotation.latitude = lat
+                image_annotation.longitude = lon
+                image_annotation.save()
+
             messages.success(request, f'Image uploadée avec succès ! ID: {image_annotation.id}')
             return redirect('annoter_image', image_id=image_annotation.id)
         else:
             messages.error(request, 'Erreur lors de l\'upload. Vérifiez le formulaire.')
     else:
         form = ImageUploadForm()
-    
+
     # Récupérer les dernières images pour affichage
     dernieres_images = ImageAnnotation.objects.all()[:5]
-    
+
     context = {
         'form': form,
         'dernieres_images': dernieres_images,
@@ -40,7 +54,6 @@ def annoter_image(request, image_id):
         if form.is_valid():
             image_annotation.annotation = form.cleaned_data['annotation']
             image_annotation.save()
-            messages.success(request, 'Annotation sauvegardée avec succès !')
             return redirect('dashboard')
     else:
         form = AnnotationForm(initial={'annotation': image_annotation.annotation})
@@ -53,11 +66,16 @@ def annoter_image(request, image_id):
 
 def dashboard(request):
     """Vue du tableau de bord avec statistiques"""
-    # Statistiques générales
     total_images = ImageAnnotation.objects.count()
     images_pleines = ImageAnnotation.objects.filter(annotation='pleine').count()
     images_vides = ImageAnnotation.objects.filter(annotation='vide').count()
     images_non_annotees = ImageAnnotation.objects.filter(annotation='non_annotee').count()
+    if total_images > 0:
+        pourcentage_pleines = round((images_pleines / total_images) * 100, 1)
+        pourcentage_vides = round((images_vides / total_images) * 100, 1)
+        pourcentage_non_annotees = round((images_non_annotees / total_images) * 100, 1)
+    else:
+        pourcentage_pleines = pourcentage_vides = pourcentage_non_annotees = 0
     
     # Statistiques de classification automatique
     auto_pleines = ImageAnnotation.objects.filter(annotation_automatique='pleine').count()
@@ -67,7 +85,6 @@ def dashboard(request):
     date_limite = datetime.now() - timedelta(days=7)
     images_recentes = ImageAnnotation.objects.filter(date_ajout__gte=date_limite).count()
     
-    # Données pour les graphiques
     stats_annotation = {
         'pleines': images_pleines,
         'vides': images_vides,
@@ -93,12 +110,24 @@ def dashboard(request):
         })
     evolution_data.reverse()
     
-    # Liste des images avec pagination
     images_list = ImageAnnotation.objects.all()
     paginator = Paginator(images_list, 10)
     page_number = request.GET.get('page')
     images = paginator.get_page(page_number)
-    
+
+    # Statistiques sur les tailles de fichiers (en Mo)
+    tailles = ImageAnnotation.objects.aggregate(
+        taille_moyenne=Avg('taille_fichier'),
+        taille_totale=Sum('taille_fichier'),
+        taille_max=Max('taille_fichier'),
+        taille_min=Min('taille_fichier'),
+    )
+
+    taille_moyenne = round(tailles['taille_moyenne'] or 0, 2)
+    taille_totale = round(tailles['taille_totale'] or 0, 2)
+    taille_max = round(tailles['taille_max'] or 0, 2)
+    taille_min = round(tailles['taille_min'] or 0, 2)
+
     context = {
         'total_images': total_images,
         'images_pleines': images_pleines,
@@ -109,6 +138,13 @@ def dashboard(request):
         'stats_auto': json.dumps(stats_auto),
         'evolution_data': json.dumps(evolution_data),
         'images': images,
+        'pourcentage_pleines': pourcentage_pleines,
+        'pourcentage_vides': pourcentage_vides,
+        'pourcentage_non_annotees': pourcentage_non_annotees,
+        'taille_moyenne': taille_moyenne,
+        'taille_totale': taille_totale,
+        'taille_max': taille_max,
+        'taille_min': taille_min,
     }
     return render(request, 'interface/dashboard.html', context)
 
@@ -116,7 +152,6 @@ def liste_images(request):
     """Vue pour lister toutes les images avec filtres"""
     images_list = ImageAnnotation.objects.all()
     
-    # Filtres
     filtre_annotation = request.GET.get('annotation')
     if filtre_annotation and filtre_annotation != 'toutes':
         images_list = images_list.filter(annotation=filtre_annotation)
@@ -125,7 +160,6 @@ def liste_images(request):
     if filtre_auto and filtre_auto != 'toutes':
         images_list = images_list.filter(annotation_automatique=filtre_auto)
     
-    # Pagination
     paginator = Paginator(images_list, 12)
     page_number = request.GET.get('page')
     images = paginator.get_page(page_number)

@@ -1,14 +1,28 @@
-{% extends "interface/base.html" %} {% block content %}
-<h1>Annotation de l'image</h1>
+{% extends 'interface/base.html' %} {% block content %}
+<div class="container mt-4">
+    <h2>Annotation d'image</h2>
 
-<div class="mb-4">
-    <p><strong>ID :</strong> {{ image_annotation.id }}</p>
-    <p><strong>Localisation :</strong> {{ image_annotation.localisation }}</p>
-    <img src="{{ image_annotation.image.url }}" class="img-fluid" alt="Image à annoter">
+    <!-- Affichage de l'image -->
+    <div class="my-3">
+        <img src="{{ image_annotation.image.url }}" alt="Image à annoter" class="img-fluid" style="max-width: 400px;">
+    </div>
+
+    <!-- Annotation automatique -->
+    <p><strong>Annotation automatique :</strong> {{ image_annotation.annotation_automatique|default:"Non disponible" }}</p>
+
+    <!-- Formulaire pour corriger / valider l'annotation -->
+    <form method="post">
+        {% csrf_token %} {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Confirmer</button>
+    </form>
+
+    <!-- Affichage d'un message de confirmation (optionnel si tu utilises messages) -->
+    {% if messages %} {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">
+        {{ message }}
+    </div>
+    {% endfor %} {% endif %}
+
+    <a href="{% url 'liste_images' %}" class="btn btn-secondary mt-3">Retour à la liste</a>
 </div>
-
-<form method="post">
-    {% csrf_token %} {{ form.as_p }}
-    <button type="submit" class="btn btn-success">Sauvegarder l'annotation</button>
-</form>
 {% endblock %}
