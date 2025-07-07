@@ -1,11 +1,8 @@
 {% extends "interface/base.html" %} {% block content %}
-
-<!-- Feuilles de style externes pour la carte -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <div class="container">
-    <!-- Titre principal -->
     <h1 class="dashboard-title mb-3">Tableau de Bord - Surveillance des Débordements</h1>
 
     <!-- Statistiques principales -->
@@ -37,7 +34,6 @@
             <div style="background: var(--yellow); width: {{ pourcentage_non_annotees }}%; height: 100%; float: left; border-radius: 0 12px 12px 0;"></div>
             <span style="position: absolute; left: 10px; top: 2px; color: #fff; font-weight: 600;">{{ pourcentage_pleines }}% Pleines</span>
             <span style="position: absolute; right: 10px; top: 2px; color: #fff; font-weight: 600;">{{ pourcentage_vides }}% Vides</span>
-            <!-- Optionnel : placer le % non annotées au centre -->
         </div>
     </div>
 
@@ -127,10 +123,8 @@
     </div>
 </div>
 
-<!-- Script Leaflet et animation barres -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Données géographiques transmises par Django
         const coords = JSON.parse('{{ coords_json|escapejs }}');
 
         // Initialisation de la carte
@@ -164,7 +158,6 @@
             shadowAnchor: [16, 32]
         });
 
-        // Ajout des marqueurs avec icône selon l'annotation
         coords.forEach(point => {
             let icon = greenIcon; // par défaut
             if (point.annotation === "pleine") {

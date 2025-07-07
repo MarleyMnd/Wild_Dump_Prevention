@@ -555,7 +555,7 @@ form select:focus {
 }
 
 
-/* ====== Upload Image & Suggestions ====== */
+/* ====== Upload Image  ====== */
 
 .list-group {
     background: var(--white);
@@ -597,7 +597,7 @@ ul li {
 }
 
 
-/* ====== Annotation d'image ====== */
+/* ====== Annotation  ====== */
 
 img.rounded.shadow {
     border-radius: 16px;
@@ -607,7 +607,7 @@ img.rounded.shadow {
 }
 
 
-/* ====== Grille d'images pour liste_images ====== */
+/* ====== Grille images ====== */
 
 .grid-images {
     display: grid;
