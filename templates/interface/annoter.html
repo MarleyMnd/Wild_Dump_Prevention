@@ -1,28 +1,29 @@
-{% extends 'interface/base.html' %} {% block content %}
-<div class="container mt-4">
-    <h2>Annotation d'image</h2>
+{% extends "interface/base.html" %} {% block content %}
+<div class="card mb-3">
+    <a href="{% url 'liste_images' %}" class="btn btn-green mb-2">Retour à la liste</a>
+    <h2 class="mb-3">Annotation de l'image</h2>
 
-    <!-- Affichage de l'image -->
-    <div class="my-3">
-        <img src="{{ image_annotation.image.url }}" alt="Image à annoter" class="img-fluid" style="max-width: 400px;">
-    </div>
-
-    <!-- Annotation automatique -->
-    <p><strong>Annotation automatique :</strong> {{ image_annotation.annotation_automatique|default:"Non disponible" }}</p>
-
-    <!-- Formulaire pour corriger / valider l'annotation -->
-    <form method="post">
-        {% csrf_token %} {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Confirmer</button>
-    </form>
-
-    <!-- Affichage d'un message de confirmation (optionnel si tu utilises messages) -->
     {% if messages %} {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">
-        {{ message }}
-    </div>
+    <div class="alert mb-2">{{ message }}</div>
     {% endfor %} {% endif %}
 
-    <a href="{% url 'liste_images' %}" class="btn btn-secondary mt-3">Retour à la liste</a>
+    <div class="mb-3 text-center">
+        <img src="{{ image_annotation.image.url }}" alt="Image à annoter" class="rounded shadow" style="max-width: 100%; height: auto;">
+    </div>
+
+    <div class="alert mb-3">
+        <strong>Annotation automatique :</strong> {{ image_annotation.annotation_automatique|default:"Non disponible" }}
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <label for="annotation">Annotation :</label>
+        <select name="annotation" id="annotation" class="mb-3">
+        <option value="pleine" {% if image.annotation == "pleine" %}selected{% endif %}>Pleine</option>
+        <option value="vide" {% if image.annotation == "vide" %}selected{% endif %}>Vide</option>
+        <option value="non_annotée" {% if image.annotation == "non_annotée" %}selected{% endif %}>Non annotée</option>
+      </select>
+        <button type="submit" class="btn btn-green mt-2">Enregistrer</button>
+    </form>
 </div>
 {% endblock %}

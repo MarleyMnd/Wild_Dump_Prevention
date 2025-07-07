@@ -1,39 +1,43 @@
 {% extends "interface/base.html" %} {% block content %}
-<h1>Liste des images</h1>
+<div class="card mb-3">
+    <h2 class="mb-3">Galerie des Images de Poubelles</h2>
 
-<form method="get" class="row mb-4">
-    <div class="col">
-        <select name="annotation" class="form-select">
-            <option value="toutes">Toutes les annotations</option>
-            <option value="pleine" {% if filtre_annotation == 'pleine' %}selected{% endif %}>Pleine</option>
-            <option value="vide" {% if filtre_annotation == 'vide' %}selected{% endif %}>Vide</option>
-            <option value="non_annotee" {% if filtre_annotation == 'non_annotee' %}selected{% endif %}>Non annotée</option>
-        </select>
+    <div class="grid-images">
+        {% for image_annotation in images %}
+        <div class="image-card card">
+            <div class="image-preview mb-2">
+                <img src="{{ image_annotation.image.url }}" alt="Poubelle {{ image_annotation.id }}" class="rounded shadow" style="width: 100%; height: 180px; object-fit: cover;">
+            </div>
+            <div class="mb-1">
+                <span class="badge
+              {% if image_annotation.annotation == 'pleine' %} alert-success
+              {% elif image_annotation.annotation == 'vide' %} alert-error
+              {% else %} alert
+              {% endif %}
+              rounded p-1">
+              {{ image_annotation.annotation|capfirst|default:"Non annotée" }}
+            </span>
+            </div>
+            <div class="mb-1" style="font-size: 0.95em;">
+                <strong>ID :</strong> {{ image_annotation.id }}<br>
+                <strong>Date :</strong> {{ image_annotation.date_ajout|date:"d/m/Y H:i"|default:"N/A" }}<br>
+                <strong>Taille :</strong> {{ image_annotation.taille_fichier|floatformat:2|default:"N/A" }} MB<br>
+                <strong>Localisation :</strong> {% if image_annotation.latitude and image_annotation.longitude %} {{ image_annotation.latitude|floatformat:4 }}, {{ image_annotation.longitude|floatformat:4 }} {% else %} Non géolocalisée {% endif %}
+            </div>
+            <div class="mt-2 text-center">
+                <a href="{% url 'annoter_image' image_annotation.id %}" class="btn btn-green btn-sm">Annoter</a>
+            </div>
+        </div>
+        {% empty %}
+        <p>Aucune image disponible.</p>
+        {% endfor %}
     </div>
-    <div class="col">
-        <select name="auto" class="form-select">
-            <option value="toutes">Toutes les auto-annotations</option>
-            <option value="pleine" {% if filtre_auto == 'pleine' %}selected{% endif %}>Auto Pleine</option>
-            <option value="vide" {% if filtre_auto == 'vide' %}selected{% endif %}>Auto Vide</option>
-        </select>
-    </div>
-    <div class="col">
-        <button type="submit" class="btn btn-primary">Filtrer</button>
-    </div>
-</form>
 
-<ul>
-    {% for image in images %}
-    <li>
-        <a href="{% url 'annoter_image' image.id %}">Image {{ image.id }}</a> - {{ image.annotation }}
-    </li>
-    {% endfor %}
-</ul>
-
-<div>
-    {% if images.has_previous %}
-    <a href="?page={{ images.previous_page_number }}">Précédent</a> {% endif %}
-    <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span> {% if images.has_next %}
-    <a href="?page={{ images.next_page_number }}">Suivant</a> {% endif %}
+    <div class="pagination mt-3">
+        {% if images.has_previous %}
+        <a href="?page={{ images.previous_page_number }}" class="btn btn-sm">← Précédent</a> {% endif %}
+        <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span> {% if images.has_next %}
+        <a href="?page={{ images.next_page_number }}" class="btn btn-sm">Suivant →</a> {% endif %}
+    </div>
 </div>
 {% endblock %}
