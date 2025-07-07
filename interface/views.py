@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 from django.db.models import Avg, Sum, Max, Min
 from geopy.geocoders import Nominatim
 from .utils import geocoder_adresse
+import matplotlib.pyplot as plt
+from io import BytesIO
 
 
 
@@ -200,3 +202,38 @@ def api_stats(request):
         'non_annotees': ImageAnnotation.objects.filter(annotation='non_annotee').count(),
     }
     return JsonResponse(stats)
+
+def stats_plot(request):
+    """
+    Génère un camembert statique (PNG) sur la répartition
+    pleine / vide / non annotée. Affiche un message si aucune donnée.
+    """
+    labels = ['Pleine', 'Vide', 'Non annotée']
+    counts = [
+        ImageAnnotation.objects.filter(annotation='pleine').count(),
+        ImageAnnotation.objects.filter(annotation='vide').count(),
+        ImageAnnotation.objects.filter(annotation='non_annotee').count(),
+    ]
+
+    fig, ax = plt.subplots()
+
+    if sum(counts) == 0:
+        ax.text(
+            0.5, 0.5,
+            'Aucune donnée disponible',
+            horizontalalignment='center',
+            verticalalignment='center',
+            fontsize=14,
+            transform=ax.transAxes
+        )
+        ax.axis('off')
+    else:
+        ax.pie(counts, labels=labels, autopct='%1.1f%%', startangle=90)
+        ax.axis('equal')
+        plt.title("Répartition des annotations")
+
+    buf = BytesIO()
+    plt.savefig(buf, format='png', bbox_inches='tight')
+    plt.close(fig)
+    buf.seek(0)
+    return HttpResponse(buf.read(), content_type='image/png')

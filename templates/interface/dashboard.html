@@ -1,6 +1,8 @@
-{% extends "interface/base.html" %} {% block content %}
+{% extends "interface/base.html" %}
+{% block content %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div class="container">
     <h1 class="dashboard-title mb-3">Tableau de Bord - Surveillance des Débordements</h1>
@@ -23,6 +25,18 @@
             <span style="font-size: 2.2rem;">{{ images_non_annotees }}</span><br>
             <small>Non Annotées</small>
         </div>
+    </div>
+
+    <!-- matplotlib -->
+    <div class="card mb-3 text-center">
+        <h2>Graphique statique </h2>
+        <img src="{% url 'graphique_statique' %}" alt="Graphique des annotations" style="max-width: 400px;" class="my-3">
+    </div>
+
+    <!-- Chart.js -->
+    <div class="card mb-3">
+        <h2>Graphique dynamique</h2>
+        <canvas id="chartAnnotations" height="180"></canvas>
     </div>
 
     <!-- Répartition des annotations -->
@@ -97,13 +111,18 @@
                     <td>{{ image.date_ajout|date:"d/m/Y H:i"|default:"N/A" }}</td>
                     <td>
                         {% if image.annotation == 'pleine' %}
-                        <span class="alert-success rounded p-2">Pleine</span> {% elif image.annotation == 'vide' %}
-                        <span class="alert-error rounded p-2">Vide</span> {% else %}
-                        <span class="alert rounded p-2">Non annotée</span> {% endif %}
+                        <span class="alert-success rounded p-2">Pleine</span>
+                        {% elif image.annotation == 'vide' %}
+                        <span class="alert-error rounded p-2">Vide</span>
+                        {% else %}
+                        <span class="alert rounded p-2">Non annotée</span>
+                        {% endif %}
                     </td>
                     <td>{{ image.taille_fichier|floatformat:2|default:"N/A" }} MB</td>
                     <td>
-                        {% if image.latitude and image.longitude %} {{ image.latitude|floatformat:4 }}, {{ image.longitude|floatformat:4 }} {% else %} Non géolocalisée {% endif %}
+                        {% if image.latitude and image.longitude %}
+                        {{ image.latitude|floatformat:4 }}, {{ image.longitude|floatformat:4 }}
+                        {% else %} Non géolocalisée {% endif %}
                     </td>
                     <td>
                         <a href="{% url 'annoter_image' image.id %}" class="btn btn-green btn-sm">Annoter</a>
@@ -116,28 +135,29 @@
         <!-- Pagination -->
         <div class="pagination">
             {% if images.has_previous %}
-            <a href="?page={{ images.previous_page_number }}" class="btn btn-sm">← Précédent</a> {% endif %}
-            <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span> {% if images.has_next %}
-            <a href="?page={{ images.next_page_number }}" class="btn btn-sm">Suivant →</a> {% endif %}
+            <a href="?page={{ images.previous_page_number }}" class="btn btn-sm">← Précédent</a>
+            {% endif %}
+            <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span>
+            {% if images.has_next %}
+            <a href="?page={{ images.next_page_number }}" class="btn btn-sm">Suivant →</a>
+            {% endif %}
         </div>
     </div>
 </div>
 
+<!-- Scripts -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
+        // Leaflet
         const coords = JSON.parse('{{ coords_json|escapejs }}');
-
-        // Initialisation de la carte
-        const defaultLatLng = coords.length ? [coords[0].lat, coords[0].lng] : [48.8566, 2.3522]; // Paris par défaut
-
+        const defaultLatLng = coords.length ? [coords[0].lat, coords[0].lng] : [48.8566, 2.3522];
         const map = L.map('mapid').setView(defaultLatLng, 13);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
+            attribution: '&copy; OpenStreetMap',
             maxZoom: 19,
         }).addTo(map);
 
-        // Icônes verte et rouge
         const greenIcon = new L.Icon({
             iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/green.png',
             shadowUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/msmarker.shadow.png',
@@ -159,39 +179,39 @@
         });
 
         coords.forEach(point => {
-            let icon = greenIcon; // par défaut
-            if (point.annotation === "pleine") {
-                icon = redIcon;
-            } else if (point.annotation === "vide") {
-                icon = greenIcon;
+            let icon = greenIcon;
+            if (point.annotation === "pleine") icon = redIcon;
+            const marker = L.marker([point.lat, point.lng], { icon: icon }).addTo(map);
+            marker.bindPopup(`<strong>ID:</strong> ${point.id}<br><strong>Annotation:</strong> ${point.annotation}<br><strong>Date:</strong> ${point.date}`);
+        });
+
+        // Chart.js dynamique
+        const stats = {{ stats_annotation|safe }};
+        const ctx = document.getElementById('chartAnnotations').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Pleines', 'Vides', 'Non annotées'],
+                datasets: [{
+                    label: 'Nombre d’images',
+                    data: [stats.pleines, stats.vides, stats.non_annotees],
+                    backgroundColor: ['#ff6b6b', '#4ecdc4', '#ffa726'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, precision: 0 }
+                }
             }
-            const marker = L.marker([point.lat, point.lng], {
-                icon: icon
-            }).addTo(map);
-            const popupContent = `
-        <strong>ID :</strong> ${point.id}<br>
-        <strong>Annotation :</strong> ${point.annotation}<br>
-        <strong>Date :</strong> ${point.date}
-      `;
-            marker.bindPopup(popupContent);
         });
 
-        // Animation des barres de progression
-        const progressBars = document.querySelectorAll('.progress-fill-pleines, .progress-fill-vides');
-        progressBars.forEach(bar => {
-            const width = bar.style.width;
-            bar.style.width = '0%';
-            setTimeout(() => {
-                bar.style.transition = 'width 1s ease-in-out';
-                bar.style.width = width;
-            }, 100);
-        });
-
-        // Auto-refresh toutes les 5 minutes
-        setTimeout(function() {
-            location.reload();
-        }, 300000);
+        // Auto-refresh
+        setTimeout(() => location.reload(), 300000);
     });
 </script>
-
 {% endblock %}
