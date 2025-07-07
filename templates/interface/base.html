@@ -1,3 +1,4 @@
+<!-- Page principale -->
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -9,10 +10,15 @@
 </head>
 
 <body>
-    <nav>
-        <a href="{% url 'dashboard' %}">Dashboard</a>
-        <a href="{% url 'upload_image' %}">Upload Image</a>
-        <a href="{% url 'liste_images' %}">Liste des Images</a>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <span class="navbar-logo">Wild Dump Prevention</span>
+            <ul class="navbar-links">
+                <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                <li><a href="{% url 'upload_image' %}">Upload Image</a></li>
+                <li><a href="{% url 'liste_images' %}">Liste des Images</a></li>
+            </ul>
+        </div>
     </nav>
 
     <div class="container">
