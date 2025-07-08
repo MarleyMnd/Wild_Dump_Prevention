@@ -247,12 +247,27 @@ def stats_plot(request):
         ImageAnnotation.objects.filter(annotation='vide').count(),
         ImageAnnotation.objects.filter(annotation='non_annotee').count(),
     ]
+    # Filtrer les labels et counts pour ne garder que ceux > 0
+    filtered = [(label, count) for label, count in zip(labels, counts) if count > 0]
+    if filtered:
+        filtered_labels, filtered_counts = zip(*filtered)
+    else:
+        filtered_labels, filtered_counts = [], []
+
+    # Définir les couleurs dans l'ordre des labels
+    color_map = {
+        'Pleine': '#F5793B',
+        'Vide': '#267f53',
+        'Non annotée': '#ffd166'
+    }
+    filtered_colors = [color_map[label] for label in filtered_labels]
+
     fig, ax = plt.subplots()
     if sum(counts) == 0:
         ax.text(0.5, 0.5, 'Aucune donnée disponible', horizontalalignment='center', verticalalignment='center', fontsize=14, transform=ax.transAxes)
         ax.axis('off')
     else:
-        ax.pie(counts, labels=labels, autopct='%1.1f%%', startangle=90)
+        ax.pie(filtered_counts, labels=filtered_labels, autopct='%1.1f%%', startangle=90, colors=filtered_colors)
         ax.axis('equal')
         plt.title("Répartition des annotations")
     buf = BytesIO()
