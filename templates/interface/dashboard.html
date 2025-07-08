@@ -1,5 +1,4 @@
-{% extends "interface/base.html" %}
-{% block content %}
+{% extends "interface/base.html" %} {% block content %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -54,17 +53,17 @@
     <!-- Distribution des tailles -->
     <div class="card mb-3">
         <h2>Distribution des Tailles</h2>
-        <div style="display: flex; gap: 24px; flex-wrap: wrap;">
-            <div class="card text-center" style="flex: 1;">
+        <div>
+            <div class="card text-center">
                 <strong>{{ taille_moyenne|default:"N/A" }}</strong><br><span>Moyenne (MB)</span>
             </div>
-            <div class="card text-center" style="flex: 1;">
+            <div class="card text-center">
                 <strong>{{ taille_totale|default:"N/A" }}</strong><br><span>Total (MB)</span>
             </div>
-            <div class="card text-center" style="flex: 1;">
+            <div class="card text-center">
                 <strong>{{ taille_max|default:"N/A" }}</strong><br><span>Plus grande (MB)</span>
             </div>
-            <div class="card text-center" style="flex: 1;">
+            <div class="card text-center">
                 <strong>{{ taille_min|default:"N/A" }}</strong><br><span>Plus petite (MB)</span>
             </div>
         </div>
@@ -73,6 +72,13 @@
     <!-- Cartographie des zones à risque -->
     <div class="card mb-3">
         <h2>Cartographie des Zones à Risque</h2>
+        <div class="zone-filters">
+            <label class="critique"><input type="checkbox" class="zone-filter" value="critique" checked> Zones Critiques</label>
+            <label class="sure"><input type="checkbox" class="zone-filter" value="sure" checked> Zones Sûres</label>
+            <label class="surveillee"><input type="checkbox" class="zone-filter" value="surveillee" checked> Zones Surveillées</label>
+        </div>
+
+
         <div id="mapid" style="height: 400px; border-radius: 18px; overflow: hidden;"></div>
         <div style="display: flex; gap: 24px; margin-top: 18px;">
             <div class="card text-center" style="flex: 1;">
@@ -111,18 +117,13 @@
                     <td>{{ image.date_ajout|date:"d/m/Y H:i"|default:"N/A" }}</td>
                     <td>
                         {% if image.annotation == 'pleine' %}
-                        <span class="alert-success rounded p-2">Pleine</span>
-                        {% elif image.annotation == 'vide' %}
-                        <span class="alert-error rounded p-2">Vide</span>
-                        {% else %}
-                        <span class="alert rounded p-2">Non annotée</span>
-                        {% endif %}
+                        <span class="alert-success rounded p-2">Pleine</span> {% elif image.annotation == 'vide' %}
+                        <span class="alert-error rounded p-2">Vide</span> {% else %}
+                        <span class="alert rounded p-2">Non annotée</span> {% endif %}
                     </td>
                     <td>{{ image.taille_fichier|floatformat:2|default:"N/A" }} MB</td>
                     <td>
-                        {% if image.latitude and image.longitude %}
-                        {{ image.latitude|floatformat:4 }}, {{ image.longitude|floatformat:4 }}
-                        {% else %} Non géolocalisée {% endif %}
+                        {% if image.latitude and image.longitude %} {{ image.latitude|floatformat:4 }}, {{ image.longitude|floatformat:4 }} {% else %} Non géolocalisée {% endif %}
                     </td>
                     <td>
                         <a href="{% url 'annoter_image' image.id %}" class="btn btn-green btn-sm">Annoter</a>
@@ -135,83 +136,21 @@
         <!-- Pagination -->
         <div class="pagination">
             {% if images.has_previous %}
-            <a href="?page={{ images.previous_page_number }}" class="btn btn-sm">← Précédent</a>
-            {% endif %}
-            <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span>
-            {% if images.has_next %}
-            <a href="?page={{ images.next_page_number }}" class="btn btn-sm">Suivant →</a>
-            {% endif %}
+            <a href="?page={{ images.previous_page_number }}" class="btn btn-sm">← Précédent</a> {% endif %}
+            <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span> {% if images.has_next %}
+            <a href="?page={{ images.next_page_number }}" class="btn btn-sm">Suivant →</a> {% endif %}
         </div>
     </div>
 </div>
 
-<!-- Scripts -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Leaflet
-        const coords = JSON.parse('{{ coords_json|escapejs }}');
-        const defaultLatLng = coords.length ? [coords[0].lat, coords[0].lng] : [48.8566, 2.3522];
-        const map = L.map('mapid').setView(defaultLatLng, 13);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap',
-            maxZoom: 19,
-        }).addTo(map);
-
-        const greenIcon = new L.Icon({
-            iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/green.png',
-            shadowUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/msmarker.shadow.png',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32],
-            shadowSize: [59, 32],
-            shadowAnchor: [16, 32]
-        });
-
-        const redIcon = new L.Icon({
-            iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red.png',
-            shadowUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/msmarker.shadow.png',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32],
-            shadowSize: [59, 32],
-            shadowAnchor: [16, 32]
-        });
-
-        coords.forEach(point => {
-            let icon = greenIcon;
-            if (point.annotation === "pleine") icon = redIcon;
-            const marker = L.marker([point.lat, point.lng], { icon: icon }).addTo(map);
-            marker.bindPopup(`<strong>ID:</strong> ${point.id}<br><strong>Annotation:</strong> ${point.annotation}<br><strong>Date:</strong> ${point.date}`);
-        });
-
-        // Chart.js dynamique
-        const stats = {{ stats_annotation|safe }};
-        const ctx = document.getElementById('chartAnnotations').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Pleines', 'Vides', 'Non annotées'],
-                datasets: [{
-                    label: 'Nombre d’images',
-                    data: [stats.pleines, stats.vides, stats.non_annotees],
-                    backgroundColor: ['#ff6b6b', '#4ecdc4', '#ffa726'],
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    title: { display: false }
-                },
-                scales: {
-                    y: { beginAtZero: true, precision: 0 }
-                }
-            }
-        });
-
-        // Auto-refresh
-        setTimeout(() => location.reload(), 300000);
-    });
+{% load static %}
+<script id="coords-data" type="application/json">
+    {{ coords_json|safe }}
 </script>
+<script id="stats-data" type="application/json">
+    {{ stats_annotation|safe }}
+</script>
+
+<script src="{% static 'interface/dashboard.js' %}"></script>
+
 {% endblock %}

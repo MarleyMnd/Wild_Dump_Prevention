@@ -554,6 +554,43 @@ form select:focus {
     margin-bottom: 30px;
 }
 
+.zone-filters {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin: 12px 0;
+}
+
+.zone-filters .zone-label {
+    padding: 8px 14px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 2px solid transparent;
+}
+
+.zone-filters .zone-label.critique {
+    background: rgba(255, 0, 0, 0.1);
+    border-color: red;
+    color: #a00;
+}
+
+.zone-filters .zone-label.sure {
+    background: rgba(0, 200, 0, 0.1);
+    border-color: green;
+    color: #070;
+}
+
+.zone-filters .zone-label.surveillee {
+    background: rgba(255, 165, 0, 0.1);
+    border-color: orange;
+    color: #aa6600;
+}
+
 
 /* ====== Upload Image  ====== */
 
