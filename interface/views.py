@@ -14,6 +14,7 @@ import json
 from math import radians, sin, cos, sqrt, atan2
 from collections import deque
 from collections import defaultdict
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 
 def upload_image(request):
     if request.method == 'POST':
@@ -253,3 +254,52 @@ def stats_plot(request):
     plt.close(fig)
     buf.seek(0)
     return HttpResponse(buf.read(), content_type='image/png')
+
+def metrics_view(request):
+    # Récupérer les images annotées manuellement
+    queryset = ImageAnnotation.objects.exclude(annotation='non_annotee')
+    y_true = [img.annotation for img in queryset]
+    y_pred = [img.annotation_automatique for img in queryset]
+    
+    if not y_true:
+        return render(request, 'interface/metrics.html', {
+            'total_evaluated': 0,
+            'error': "Aucune image annotée disponible pour le calcul"
+        })
+
+    # Calculer l'accuracy séparément
+    accuracy = accuracy_score(y_true, y_pred)
+    
+    # Calculer le rapport de classification
+    report = classification_report(y_true, y_pred, 
+                                   labels=['pleine', 'vide'],
+                                   output_dict=True,
+                                   zero_division=0)
+    
+    # Extraire les métriques spécifiques
+    metrics = {
+        'accuracy': round(accuracy, 3),
+        'precision_pleine': round(report['pleine']['precision'], 3),
+        'recall_pleine': round(report['pleine']['recall'], 3),
+        'f1_pleine': round(report['pleine']['f1-score'], 3),
+        'precision_vide': round(report['vide']['precision'], 3),
+        'recall_vide': round(report['vide']['recall'], 3),
+        'f1_vide': round(report['vide']['f1-score'], 3),
+    }
+    
+    # Matrice de confusion
+    cm = confusion_matrix(y_true, y_pred, labels=['pleine', 'vide'])
+    tn, fp, fn, tp = cm.ravel()
+    
+    context = {
+        'total_evaluated': len(y_true),
+        'metrics': metrics,
+        'confusion_matrix': {
+            'true_positive': tp,
+            'true_negative': tn,
+            'false_positive': fp,
+            'false_negative': fn
+        }
+    }
+    
+    return render(request, 'interface/metrics.html', context)
