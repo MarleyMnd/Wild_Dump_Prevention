@@ -153,17 +153,23 @@ def dashboard(request):
 
         elif len(cluster) == 1:
             p = cluster[0]
+            # Ajout de tous les points isolés, quelle que soit l'annotation
             if p['annotation'] == 'pleine':
-                zones.append({
-                    'id': p['id'],
-                    'lat': p['latitude'],
-                    'lng': p['longitude'],
-                    'annotation': p['annotation'],
-                    'zone_type': 'critique',  # zone isolée pleine = critique
-                    'zone_id': zone_id,
-                    'date': p['date_ajout'].strftime('%d/%m/%Y %H:%M'),
-                })
-                zone_id += 1
+                zone_type = 'critique'
+            elif p['annotation'] == 'vide':
+                zone_type = 'sure'
+            else:
+                zone_type = 'surveillee'
+            zones.append({
+                'id': p['id'],
+                'lat': p['latitude'],
+                'lng': p['longitude'],
+                'annotation': p['annotation'],
+                'zone_type': zone_type,
+                'zone_id': zone_id,
+                'date': p['date_ajout'].strftime('%d/%m/%Y %H:%M'),
+            })
+            zone_id += 1
 
 
     zone_type_counts = defaultdict(set)
