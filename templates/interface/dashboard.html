@@ -38,17 +38,23 @@
         <canvas id="chartAnnotations" height="180"></canvas>
     </div>
 
-    <!-- Répartition des annotations -->
+   <!-- Répartition des annotations -->
     <div class="card mb-3">
         <h2>Répartition des Annotations</h2>
-        <div style="background: var(--blue); border-radius: 12px; height: 22px; width: 100%; position: relative; overflow: hidden;">
-            <div style="background: var(--green); width: {{ pourcentage_pleines }}%; height: 100%; border-radius: 12px 0 0 12px; float: left;"></div>
-            <div style="background: var(--orange); width: {{ pourcentage_vides }}%; height: 100%; float: left;"></div>
-            <div style="background: var(--yellow); width: {{ pourcentage_non_annotees }}%; height: 100%; float: left; border-radius: 0 12px 12px 0;"></div>
-            <span style="position: absolute; left: 10px; top: 2px; color: #fff; font-weight: 600;">{{ pourcentage_pleines }}% Pleines</span>
-            <span style="position: absolute; right: 10px; top: 2px; color: #fff; font-weight: 600;">{{ pourcentage_vides }}% Vides</span>
+        <div class="annotation-bar">
+            <div class="bar-segment pleine" style="width: {{ pourcentage_pleines }}%;">
+                <span>{{ pourcentage_pleines }}% Pleines</span>
+            </div>
+            <div class="bar-segment vide" style="width: {{ pourcentage_vides }}%;">
+                <span>{{ pourcentage_vides }}% Vides</span>
+            </div>
+            <div class="bar-segment non-annotee" style="width: {{ pourcentage_non_annotees }}%;">
+                <span>{{ pourcentage_non_annotees }}% Non annotées</span>
+            </div>
         </div>
     </div>
+
+
 
     <!-- Distribution des tailles -->
     <div class="card mb-3">
@@ -117,8 +123,8 @@
                     <td>{{ image.date_ajout|date:"d/m/Y H:i"|default:"N/A" }}</td>
                     <td>
                         {% if image.annotation == 'pleine' %}
-                        <span class="alert-success rounded p-2">Pleine</span> {% elif image.annotation == 'vide' %}
-                        <span class="alert-error rounded p-2">Vide</span> {% else %}
+                        <span class="alert-error rounded p-2">Pleine</span> {% elif image.annotation == 'vide' %}
+                        <span class="alert-success rounded p-2">Vide</span> {% else %}
                         <span class="alert rounded p-2">Non annotée</span> {% endif %}
                     </td>
                     <td>{{ image.taille_fichier|floatformat:2|default:"N/A" }} MB</td>
