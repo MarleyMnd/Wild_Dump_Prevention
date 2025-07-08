@@ -8,5 +8,5 @@ urlpatterns = [
     path('images/', views.liste_images, name='liste_images'),
     path('api/stats/', views.api_stats, name='api_stats'),
     path('graphique-statique/', views.stats_plot, name='graphique_statique'),
-
+    path('metrics/', views.metrics_view, name='metrics'),
 ]
