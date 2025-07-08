@@ -1,0 +1,86 @@
+{% extends "interface/base.html" %}
+{% block content %}
+<div class="card mb-3">
+    <h2 class="mb-3">Métriques de Performance</h2>
+    
+    {% if total_evaluated > 0 %}
+        <div class="metrics-grid">
+            <!-- Accuracy -->
+            <div class="metric-card">
+                <h3>Accuracy</h3>
+                <div class="metric-value">{{ metrics.accuracy }}</div>
+                <p>Exactitude globale du modèle</p>
+            </div>
+            
+            <!-- Précision Pleine -->
+            <div class="metric-card">
+                <h3>Précision (Pleine)</h3>
+                <div class="metric-value">{{ metrics.precision_pleine }}</div>
+                <p>Pouvoir prédictif pour "pleine"</p>
+            </div>
+            
+            <!-- Rappel Pleine -->
+            <div class="metric-card">
+                <h3>Rappel (Pleine)</h3>
+                <div class="metric-value">{{ metrics.recall_pleine }}</div>
+                <p>Couverture des "pleine" réels</p>
+            </div>
+            
+            <!-- F1-Score Pleine -->
+            <div class="metric-card">
+                <h3>F1-Score (Pleine)</h3>
+                <div class="metric-value">{{ metrics.f1_pleine }}</div>
+                <p>Moyenne harmonique précision/rappel</p>
+            </div>
+            
+            <!-- Précision Vide -->
+            <div class="metric-card">
+                <h3>Précision (Vide)</h3>
+                <div class="metric-value">{{ metrics.precision_vide }}</div>
+                <p>Pouvoir prédictif pour "vide"</p>
+            </div>
+            
+            <!-- Rappel Vide -->
+            <div class="metric-card">
+                <h3>Rappel (Vide)</h3>
+                <div class="metric-value">{{ metrics.recall_vide }}</div>
+                <p>Couverture des "vide" réels</p>
+            </div>
+            
+            <!-- F1-Score Vide -->
+            <div class="metric-card">
+                <h3>F1-Score (Vide)</h3>
+                <div class="metric-value">{{ metrics.f1_vide }}</div>
+                <p>Moyenne harmonique précision/rappel</p>
+            </div>
+        </div>
+        
+        <!-- Matrice de confusion -->
+        <h3 class="mt-4">Matrice de Confusion</h3>
+        <table class="confusion-matrix">
+            <tr>
+                <th></th>
+                <th>Prédit Pleine</th>
+                <th>Prédit Vide</th>
+            </tr>
+            <tr>
+                <th>Réel Pleine</th>
+                <td class="true-positive">{{ confusion_matrix.true_positive }}</td>
+                <td class="false-negative">{{ confusion_matrix.false_negative }}</td>
+            </tr>
+            <tr>
+                <th>Réel Vide</th>
+                <td class="false-positive">{{ confusion_matrix.false_positive }}</td>
+                <td class="true-negative">{{ confusion_matrix.true_negative }}</td>
+            </tr>
+        </table>
+    {% else %}
+        <div class="alert alert-warning">
+            {% if error %}{{ error }}{% else %}
+            Aucune donnée disponible pour le calcul des métriques.
+            Les images doivent être annotées manuellement pour l'évaluation.
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
