@@ -5,7 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = '-p&pw48y)y@ozdx$!dd7e+7sy!ji#bzfv7ch1u!)6&x111r3xz'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'wdp-project.onrender.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
