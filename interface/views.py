@@ -270,7 +270,6 @@ def stats_plot(request):
     else:
         ax.pie(filtered_counts, labels=filtered_labels, autopct='%1.1f%%', startangle=90, colors=filtered_colors)
         ax.axis('equal')
-        plt.title("Répartition des annotations")
     buf = BytesIO()
     plt.savefig(buf, format='png', bbox_inches='tight')
     plt.close(fig)
