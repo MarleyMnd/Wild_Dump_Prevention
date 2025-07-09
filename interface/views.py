@@ -216,19 +216,20 @@ def dashboard(request):
 
 def liste_images(request):
     images_list = ImageAnnotation.objects.all()
-    filtre_annotation = request.GET.get('annotation')
-    if filtre_annotation and filtre_annotation != 'toutes':
-        images_list = images_list.filter(annotation=filtre_annotation)
-    filtre_auto = request.GET.get('auto')
-    if filtre_auto and filtre_auto != 'toutes':
-        images_list = images_list.filter(annotation_automatique=filtre_auto)
+    filtre = request.GET.get('filtre')
+    if filtre == 'pleine':
+        images_list = images_list.filter(annotation='pleine')
+    elif filtre == 'vide':
+        images_list = images_list.filter(annotation='vide')
+    elif filtre == 'non_annotee':
+        images_list = images_list.filter(Q(annotation__isnull=True) | Q(annotation='') | Q(annotation='non_annotee'))
+    # sinon, toutes les images
     paginator = Paginator(images_list, 12)
     page_number = request.GET.get('page')
     images = paginator.get_page(page_number)
     return render(request, 'interface/liste_images.html', {
         'images': images,
-        'filtre_annotation': filtre_annotation,
-        'filtre_auto': filtre_auto,
+        'filtre': filtre,
     })
 
 def api_stats(request):

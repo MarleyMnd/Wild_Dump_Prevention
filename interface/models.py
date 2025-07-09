@@ -132,14 +132,13 @@ class ImageAnnotation(models.Model):
             print("[DEBUG] Données incomplètes : classification annulée.")
             return
 
-        # Ajustement des seuils pour limiter la sur-classification en 'vide'
-        if self.luminance_moyenne <= 120:  # était 124.07
+        if self.luminance_moyenne <= 120:
             if self.contraste <= 254.65:
                 if self.luminance_moyenne <= 114.65:
-                    self.annotation_automatique = 'pleine'  # était 'vide'
+                    self.annotation_automatique = 'pleine'
                     print("Arbre ajusté: lum <= 120, contraste <= 254.65, lum <= 114.65 → Pleine")
                 else:
-                    self.annotation_automatique = 'pleine'
+                    self.annotation_automatique = 'vide'
                     print("Arbre ajusté: lum <= 120, contraste <= 254.65, lum > 114.65 → Pleine")
             else:
                 self.annotation_automatique = 'pleine'

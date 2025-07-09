@@ -28,13 +28,13 @@
 
     <!-- matplotlib -->
     <div class="card mb-3 text-center">
-        <h2>Graphique statique </h2>
+        <h2>Répartition des annotations</h2>
         <img src="{% url 'graphique_statique' %}" alt="Graphique des annotations" style="max-width: 400px;" class="my-3">
     </div>
 
     <!-- Chart.js -->
     <div class="card mb-3">
-        <h2>Graphique dynamique</h2>
+        <h2>Histogramme des annotations</h2>
         <canvas id="chartAnnotations" height="180"></canvas>
     </div>
 
@@ -60,7 +60,7 @@
 
     <!-- Cartographie des zones à risque -->
     <div class="card mb-3">
-        <h2>Cartographie des Zones à Risque</h2>
+        <h2>Cartographie des zones à risque</h2>
         <div class="zone-filters">
             <label class="critique"><input type="checkbox" class="zone-filter" value="critique" checked> Zones Critiques</label>
             <label class="sure"><input type="checkbox" class="zone-filter" value="sure" checked> Zones Sûres</label>

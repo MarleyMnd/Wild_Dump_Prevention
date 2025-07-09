@@ -1,6 +1,20 @@
-{% extends "interface/base.html" %} {% block content %}
+{% extends "interface/base.html" %} 
+{% block content %}
 <div class="card mb-3">
     <h2 class="mb-3">Galerie des Images de Poubelles</h2>
+
+    <!-- Formulaire de filtre -->
+    <form method="get" class="mb-3" style="display: flex; align-items: center; gap: 1em;">
+        <label for="filtre" style="margin-bottom:0;">Filtrer :</label>
+        <select name="filtre" id="filtre" class="form-select form-select-sm" style="width: auto;">
+            <option value="" {% if not request.GET.filtre %}selected{% endif %}>Toutes</option>
+            <option value="pleine" {% if request.GET.filtre == "pleine" %}selected{% endif %}>Pleine</option>
+            <option value="vide" {% if request.GET.filtre == "vide" %}selected{% endif %}>Vide</option>
+            <option value="non_annotee" {% if request.GET.filtre == "non_annotee" %}selected{% endif %}>Non annotée</option>
+        </select>
+        <button type="submit" class="btn btn-sm btn-green">Filtrer</button>
+    </form>
+    <!-- Fin formulaire de filtre -->
 
     <div class="grid-images">
         {% for image_annotation in images %}
@@ -35,9 +49,12 @@
 
     <div class="pagination mt-3">
         {% if images.has_previous %}
-        <a href="?page={{ images.previous_page_number }}" class="btn btn-sm">← Précédent</a> {% endif %}
-        <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span> {% if images.has_next %}
-        <a href="?page={{ images.next_page_number }}" class="btn btn-sm">Suivant →</a> {% endif %}
+        <a href="?{% if request.GET.filtre %}filtre={{ request.GET.filtre }}&{% endif %}page={{ images.previous_page_number }}" class="btn btn-sm">← Précédent</a> 
+        {% endif %}
+        <span>Page {{ images.number }} / {{ images.paginator.num_pages }}</span> 
+        {% if images.has_next %}
+        <a href="?{% if request.GET.filtre %}filtre={{ request.GET.filtre }}&{% endif %}page={{ images.next_page_number }}" class="btn btn-sm">Suivant →</a> 
+        {% endif %}
     </div>
 </div>
 {% endblock %}
